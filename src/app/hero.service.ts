@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
+import { NgxSpinnerService } from "ngx-spinner";
 
 import { MessageService } from './message.service';
 import { Hero } from './hero';
@@ -18,11 +19,12 @@ export class HeroService {
 
   constructor(
     private http: HttpClient,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private spinner: NgxSpinnerService
   ) { }
 
   getHeroes(): Observable<Hero[]> {
-    return this.http.get<Hero[]>(this.heroesUrl)
+    return this.get<Hero[]>(this.heroesUrl)
       .pipe(
         tap(_ => this.log('fetched heroes')),
         catchError(this.handleError<Hero[]>('getHeroes', []))
@@ -31,7 +33,7 @@ export class HeroService {
 
   getHero(id: number): Observable<Hero>{
     const url = `${this.heroesUrl}/${id}`;
-    return this.http.get<Hero>(url)
+    return this.get<Hero>(url)
       .pipe(
         tap(_ => this.log(`fetched hero id=${id}`)),
         catchError(this.handleError<Hero>(`getHero id=${id}`))
@@ -39,7 +41,7 @@ export class HeroService {
   }
 
   updateHero(hero: Hero): Observable<any>{
-    return this.http.put(this.heroesUrl, hero, this.httpOptions)
+    return this.put(this.heroesUrl, hero)
       .pipe(
         tap(_ => this.log(`updated hero id=${hero.id}`)),
         catchError(this.handleError<any>('updateHero'))
@@ -47,7 +49,7 @@ export class HeroService {
   }
 
   addHero(hero: Hero): Observable<Hero>{
-    return this.http.post<Hero>(this.heroesUrl, hero, this.httpOptions)
+    return this.post<Hero>(this.heroesUrl, hero)
       .pipe(
         tap((newHero: Hero) => this.log(`added hero w/ id=${newHero.id}`)),
         catchError(this.handleError<Hero>('addHero'))
@@ -58,7 +60,7 @@ export class HeroService {
     const id = typeof hero === 'number' ? hero : hero.id;
     const url = `${this.heroesUrl}/${id}`;
 
-    return this.http.delete<Hero>(url, this.httpOptions)
+    return this.delete<Hero>(url)
       .pipe(
         tap(_ => this.log(`deleted hero id=${id}`)),
         catchError(this.handleError<Hero>('deleteHero'))
@@ -70,10 +72,42 @@ export class HeroService {
 
     const url = `${this.heroesUrl}/?name=${term}`;
 
-    return this.http.get<Hero[]>(url)
+    return this.get<Hero[]>(url)
       .pipe(
         tap(_ => this.log(`found heroes matching "${term}"`)),
         catchError(this.handleError<Hero[]>('searchHeroes', []))
+      );
+  }
+
+  private get<T>(url: string): Observable<any>{
+    this.spinner.show();
+    return this.http.get<T>(url)
+      .pipe(
+        tap(_ => this.spinner.hide())
+      );
+  }
+
+  private delete<T>(url: string): Observable<any>{
+    this.spinner.show();
+    return this.http.delete<T>(url, this.httpOptions)
+      .pipe(
+        tap(_ => this.spinner.hide())
+      );
+  }
+
+  private post<T>(url: string, params: any): Observable<any>{
+    this.spinner.show();
+    return this.http.post<T>(url, params, this.httpOptions)
+      .pipe(
+        tap(_ => this.spinner.hide())
+      );
+  }
+
+  private put<T>(url: string, params: any): Observable<any>{
+    this.spinner.show();
+    return this.http.put<T>(url, params, this.httpOptions)
+      .pipe(
+        tap(_ => this.spinner.hide())
       );
   }
 
